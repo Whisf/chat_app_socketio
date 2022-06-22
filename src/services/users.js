@@ -1,48 +1,28 @@
-const users = []
+const User = require('../models/user.model')
 
-const addUser = ({ id, username, room }) => {
-    username = username.trim().toLowerCase()
-    room = room.trim().toLowerCase()
+const createUser = async (username) => {
+    return User.create({name: username})
+}
 
-    if (!username || !room) {
-        return {
-            error: 'Username and room are required!'
-        }
-    }    const existingUser = users.find((user) => {
-        return user.room === room && user.username === username
-    })
+const getUserById = async (userId) => {
+    return User.findById(userId)
+}
 
-    if (existingUser) {
-        return {
-            error: 'Username is in use!'
-        }
-    }
-
-    const user = { id, username, room }
-    users.push(user)
-    return { user }
+const getUserByName = (userName) => {
+    return User.findOne({name: userName});
 }
 
 const removeUser = (id) => {
-    const index = users.findIndex((user) => user.id === id)
+    // const index = users.findIndex((user) => user.id === id)
 
-    if (index !== -1) {
-        return users.splice(index, 1)[0]
-    }
-}
-
-const getUser = (id) => {
-    return users.find((user) => user.id === id)
-}
-
-const getUsersInRoom = (room) => {
-    room = room.trim().toLowerCase()
-    return users.filter((user) => user.room === room)
+    // if (index !== -1) {
+    //     return users.splice(index, 1)[0]
+    // }
 }
 
 module.exports = {
-    addUser,
     removeUser,
-    getUser,
-    getUsersInRoom
+    createUser,
+    getUserById,
+    getUserByName
 }

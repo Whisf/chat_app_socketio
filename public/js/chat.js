@@ -13,9 +13,11 @@ const locationMessageTemplate = document.querySelector('#location-message-templa
 const sidebarTemplate = document.querySelector('#sidebar-template').innerHTML
 
 // query string
-const { username, room } = Qs.parse(location.search, { ignoreQueryPrefix: true })
+const { username, room, userId } = Qs.parse(location.search, { ignoreQueryPrefix: true })
+console.log(Qs.parse(location.search, { ignoreQueryPrefix: true }));
 
 const autoscroll = () => {
+    console.log('test1');
     const $newMessage = $messages.lastElementChild
     const newMessageStyles = getComputedStyle($newMessage)
     const newMessageMargin = parseInt(newMessageStyles.marginBottom)
@@ -31,15 +33,25 @@ const autoscroll = () => {
     }
 }
 
-socket.on('message', (message) => {
-    console.log(message)
-    const html = Mustache.render(messageTemplate, {
-        username: message.username,
-        message: message.text,
-        createdAt: moment(message.createdAt).format('h:mm a')
+socket.emit('join', { username, room }, (error) => {
+    if (error) {
+        alert(error)
+        location.href = '/'
+    }
+})
+
+socket.on('message', (messages) => {
+    console.log(messages);
+    messages.forEach((message) => {
+        const html = Mustache.render(messageTemplate, {
+            username: message.username,
+            message: message.text,
+            createdAt: moment(message.createdAt).format('h:mm a')
+        })
+        $messages.insertAdjacentHTML('beforeend', html)
+        autoscroll()
     })
-    $messages.insertAdjacentHTML('beforeend', html)
-    autoscroll()
+
 })
 
 socket.on('locationMessage', (message) => {
@@ -53,11 +65,12 @@ socket.on('locationMessage', (message) => {
     autoscroll()
 })
 
-socket.on('roomData', ({ room, users }) => {
+socket.on('roomData', ({ room, users, userId }) => {
     const html = Mustache.render(sidebarTemplate, {
         room,
-        users
+        users: users
     })
+    document.cookie = `userId=${userId}`
     document.querySelector('#sidebar').innerHTML = html
 })
 
@@ -67,8 +80,10 @@ $messageForm.addEventListener('submit', (e) => {
     $messageFormButton.setAttribute('disabled', 'disabled')
 
     const message = e.target.elements.message.value
+    const cookie = document.cookie
+    const userId = cookie.substring(cookie.indexOf('=') + 1)
 
-    socket.emit('sendMessage', message, (error) => {
+    socket.emit('sendMessage', {userId, message, room}, (error) => {
         $messageFormButton.removeAttribute('disabled')
         $messageFormInput.value = ''
         $messageFormInput.focus()
@@ -80,6 +95,17 @@ $messageForm.addEventListener('submit', (e) => {
         console.log('Message delivered!')
     })
 })
+
+// var skip = 0 
+// $messages.addEventListener("wheel", function(event){
+//     if(event.deltaY < 0) {
+//         skip += 1
+//         socket.emit('oldmessage', {room, skip}, (err) => {
+//             console.log(err);
+//         })
+//     }
+// });
+
 
 $sendLocationButton.addEventListener('click', () => {
     if (!navigator.geolocation) {
@@ -99,9 +125,3 @@ $sendLocationButton.addEventListener('click', () => {
     })
 })
 
-socket.emit('join', { username, room }, (error) => {
-    if (error) {
-        alert(error)
-        location.href = '/'
-    }
-})
