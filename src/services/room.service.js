@@ -6,11 +6,9 @@ const {getUserByName, createUser, getUserById} =  require('../services/users')
  * @param {String} name 
  * @returns {Room}
  */
-const createRoom = async(name) => {
-    if(!name || name === "") {
-        throw new Error('Room name is invalid')
-    }
-    return Room.create({ name: name })
+const createRoom = async(roomBody) => {
+    const room = await Room.create(roomBody)
+    return room
 }
 
 /**
@@ -18,7 +16,7 @@ const createRoom = async(name) => {
  * @param {String} id 
  * @returns {Room}
  */
-const getRoomById = (id) => {
+const getRoomById = async (id) => {
     return Room.findById(id)
 }
 
@@ -27,7 +25,7 @@ const getRoomById = (id) => {
  * @param {String} name 
  * @returns {Room}
  */
-const getRoomByName = (name) => {
+const getRoomByName = async(name) => {
     return Room.findOne({name})
 }
 
@@ -79,10 +77,27 @@ const getUsersInRoom = async (roomName) => {
     return Promise.all(listUsers)
 }
 
+/**
+ * 
+ * @param {String} roomId 
+ * @param {Object} body 
+ * @returns {Room}
+ */
+const updateRoomById = async(roomId, body) => {
+    const room = await getRoomById(roomId);
+    if(!room) {
+        throw new Error('Not found room')
+    }
+    Object.assign(room, body)
+    await room.save()
+    return room
+}
+
 module.exports = {
     createRoom,
     getRoomById,
     getRoomByName,
     addUser,
-    getUsersInRoom
+    getUsersInRoom,
+    updateRoomById
 }

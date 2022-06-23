@@ -96,15 +96,16 @@ $messageForm.addEventListener('submit', (e) => {
     })
 })
 
-// var skip = 0 
-// $messages.addEventListener("wheel", function(event){
-//     if(event.deltaY < 0) {
-//         skip += 1
-//         socket.emit('oldmessage', {room, skip}, (err) => {
-//             console.log(err);
-//         })
-//     }
-// });
+var skip = 0 
+$messages.addEventListener("wheel", function(event){
+    console.log(event)
+    if(event.deltaY < 0) {
+        skip += 1
+        socket.emit('oldmessage', {room, skip}, (err) => {
+            console.log(err);
+        })
+    }
+});
 
 
 $sendLocationButton.addEventListener('click', () => {

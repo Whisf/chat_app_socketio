@@ -1,0 +1,1 @@
+module.exports.roomServices = require('./room.service')

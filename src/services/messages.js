@@ -8,7 +8,7 @@ const {getRoomByName} = require('./room.service')
  * @param {String} room 
  * @returns {Message}
  */
-const saveMessage = (userId, message, room) => {
+const addMessage = (userId, message, room) => {
     return Message.create({
         text: message,
         sendedBy: userId,
@@ -24,13 +24,14 @@ const saveMessage = (userId, message, room) => {
  */
 const getMessages = async (roomName, skip) => {
     const room = await getRoomByName(roomName);
-    skip = skip * 20
+    const messagePerTime = 20
+    skip = (skip * messagePerTime) - messagePerTime
     const listMessages = await Message.find(
             { room: room._id },
             { text: 1, createdAt: 1, sendedBy: 1 }, 
             { sort: {createdAt: 1 }, 
             limit: 1000, 
-            skip: 0
+            skip: skip
         })
         .populate('sendedBy', 'name')
         .exec();
@@ -61,6 +62,6 @@ const generateMessage = (username, text) => {
 
 module.exports = {
     generateMessage,
-    saveMessage,
+    addMessage,
     getMessages
 }

@@ -1,15 +1,33 @@
 const User = require('../models/user.model')
 
+/**
+ * 
+ * @param {String} username 
+ * @returns {User}
+ */
 const createUser = async (username) => {
-    return User.create({name: username})
+    const user = await User.create({name: username})
+    return user
 }
 
+/**
+ * 
+ * @param {String} userId 
+ * @returns {User}
+ */
 const getUserById = async (userId) => {
-    return User.findById(userId)
+    const user = await User.findById(userId)
+    return user
 }
 
-const getUserByName = (userName) => {
-    return User.findOne({name: userName});
+/**
+ * 
+ * @param {String} userName 
+ * @returns {User}
+ */
+const getUserByName = async(userName) => {
+    const user = await User.findOne({name: userName});
+    return user
 }
 
 const removeUser = (id) => {

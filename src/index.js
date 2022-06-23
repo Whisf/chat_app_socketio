@@ -3,18 +3,35 @@ const http = require('http')
 const express = require('express')
 const socketio = require('socket.io')
 const Filter = require('bad-words')
-const { generateMessage, saveMessage, getMessages } = require('./services/messages')
-const { removeUser, getUserById } = require('./services/users')
-const { getRoomByName, addUser, getUsersInRoom } = require('./services/room.service')
 const mongoose = require("mongoose");
+const router = require('./routes/index')
 const app = express()
+const morgan = require('morgan')
 const server = http.createServer(app)
 const io = socketio(server)
+const cors = require('cors')
+const { generateMessage, addMessage, getMessages } = require('./services/messages')
+const { removeUser, getUserById } = require('./services/users')
+const { getRoomByName, addUser, getUsersInRoom } = require('./services/room.service')
 
 const port = process.env.PORT || 3000
 const publicDirectoryPath = path.join(__dirname, '../public')
 
 app.use(express.static(publicDirectoryPath))
+// parse json request body
+app.use(express.json());
+
+// parse urlencoded request body
+app.use(express.urlencoded({ extended: true }));
+
+//enable cors
+app.use(cors());
+app.options('*', cors());
+
+app.use('/', router)
+app.use(morgan('combined', {
+    skip: function(req, res) { return res.statusCode < 400 }
+}))
 
 io.on('connection', (socket) => {
     console.log('New WebSocket connection')
@@ -24,7 +41,7 @@ io.on('connection', (socket) => {
 
         socket.join(room)
 
-        socket.emit('message', await getMessages(room, 0))
+        socket.emit('message', await getMessages(room, 1))
         socket.broadcast.to(room).emit('message', generateMessage('Admin', `${user} has joined!`))
 
         const listUsers = await getUsersInRoom(room);
@@ -47,13 +64,13 @@ io.on('connection', (socket) => {
         }
 
         io.to(room).emit('message', generateMessage(user.name, message))
-        await saveMessage(user._id, message, getRoom._id)
+        await addMessage(user._id, message, getRoom._id)
         callback()
     })
 
     socket.on('oldmessage', async(options, callback) => {
         const {room, skip} = options
-        socket.broadcast.emit(socket.id, await getMessages(room, skip))
+        socket.broadcast.to(room).emit(socket.id, await getMessages(room, skip))
         callback()
     })
 
