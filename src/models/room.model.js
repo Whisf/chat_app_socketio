@@ -4,7 +4,8 @@ const Messages = require('./message.model')
 const RoomSchema = new mongoose.Schema({
     name: {
         type: String,
-        default: ''
+        required: true,
+        unique: true
     },
     users: {
         type: Array

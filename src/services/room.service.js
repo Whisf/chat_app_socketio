@@ -1,5 +1,6 @@
 const Room = require('../models/room.model')
-const {getUserByName, createUser, getUserById} =  require('../services/users')
+const { getMessages } = require('./messages')
+const {getUserByName, createUser, getUserById} =  require('./users.service')
 
 /**
  * Create Room by name
@@ -7,7 +8,9 @@ const {getUserByName, createUser, getUserById} =  require('../services/users')
  * @returns {Room}
  */
 const createRoom = async(roomBody) => {
-    const room = await Room.create(roomBody)
+    const room = await Room.create(roomBody).catch((err) => {
+        throw new Error(err)
+    })
     return room
 }
 
@@ -17,7 +20,11 @@ const createRoom = async(roomBody) => {
  * @returns {Room}
  */
 const getRoomById = async (id) => {
-    return Room.findById(id)
+    const room = await Room.findById(id).then((err) => {
+        throw new Error(err.code, err.messages)
+    })
+
+    return room
 }
 
 /**
@@ -26,7 +33,9 @@ const getRoomById = async (id) => {
  * @returns {Room}
  */
 const getRoomByName = async(name) => {
-    return Room.findOne({name})
+    const room = await Room.findOne({name})
+
+    return room
 }
 
 /**
@@ -39,13 +48,13 @@ const addUser = async(userName, roomName) => {
     if(!userName || !roomName) {
         throw new Error('Invalid!')
     }
-    const room = await getRoomByName(roomName);
     let user = await getUserByName(userName);
-    if(!room) {
-        throw new Error(`Not found room name: ${roomName}`)
-    }
     if(!user) {
         user = await createUser(userName)
+    }
+    let room = await getRoomByName(roomName);
+    if(!room) {
+        room = await createRoom({name: roomName,  createdBy: user._id, users: [user._id.toString()]})
     }
 
     const userId = user._id.toString()
@@ -79,6 +88,24 @@ const getUsersInRoom = async (roomName) => {
 
 /**
  * 
+ * @param {String} roomName 
+ * @returns {Object}
+ */
+const getRoomAndMessages = async (roomName) => {
+    const room = await getRoomByName(roomName);
+    if(!room) {
+        throw new Error('Room not found')
+    }
+    const messages = await getMessages(room._id, 1)
+
+    return {
+        room: room.name,
+        messages: messages
+    }
+}
+
+/**
+ * 
  * @param {String} roomId 
  * @param {Object} body 
  * @returns {Room}
@@ -99,5 +126,6 @@ module.exports = {
     getRoomByName,
     addUser,
     getUsersInRoom,
-    updateRoomById
+    updateRoomById,
+    getRoomAndMessages
 }

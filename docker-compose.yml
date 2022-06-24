@@ -1,0 +1,31 @@
+version: '3.4'
+
+services:
+  chatapp:
+    image: chatapp
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    depends_on:
+      - mongodb
+    ports:
+      - 3000:3000
+    networks:
+      - node-network
+  mongo:
+    image: mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb:/data/db
+    networks:
+      - node-network
+volumes:
+  mongodb:
+
+networks:
+  node-network: 
+    external:
+      name: node-network

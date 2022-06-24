@@ -14,11 +14,13 @@ const createRoom = catchAsync(async(req, res) => {
     res.send(response(httpStatus.OK, 'Create Room Success!', room))
 })
 
-const getRoomById = catchAsync(async(req, res) => {
+const getRoomAndMess = catchAsync(async(req, res) => {
+    const roomAndMessage = await roomServices.getRoomAndMessages(req.params.room)
 
+    res.send(response(httpStatus.OK, 'Get room success!', roomAndMessage))
 })
 
 module.exports = {
     createRoom,
-    getRoomById
+    getRoomAndMess
 }

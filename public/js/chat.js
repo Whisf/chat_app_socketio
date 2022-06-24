@@ -1,78 +1,81 @@
 const socket = io()
 
-// Elements
 const $messageForm = document.querySelector('#message-form')
 const $messageFormInput = $messageForm.querySelector('input')
 const $messageFormButton = $messageForm.querySelector('button')
 const $sendLocationButton = document.querySelector('#send-location')
 const $messages = document.querySelector('#messages')
 
-// Templates
 const messageTemplate = document.querySelector('#message-template').innerHTML
 const locationMessageTemplate = document.querySelector('#location-message-template').innerHTML
 const sidebarTemplate = document.querySelector('#sidebar-template').innerHTML
 
-// query string
 const { username, room, userId } = Qs.parse(location.search, { ignoreQueryPrefix: true })
-console.log(Qs.parse(location.search, { ignoreQueryPrefix: true }));
 
 const autoscroll = () => {
-    console.log('test1');
-    const $newMessage = $messages.lastElementChild
-    const newMessageStyles = getComputedStyle($newMessage)
-    const newMessageMargin = parseInt(newMessageStyles.marginBottom)
-    const newMessageHeight = $newMessage.offsetHeight + newMessageMargin
-    const visibleHeight = $messages.offsetHeight
-    const containerHeight = $messages.scrollHeight
-
-    // How far have I scrolled?
-    const scrollOffset = $messages.scrollTop + visibleHeight
-
-    if (containerHeight - newMessageHeight <= scrollOffset) {
-        $messages.scrollTop = $messages.scrollHeight
-    }
+    $messages.scrollTo(0, $messages.scrollHeight)
 }
+const connectToSocket = async () => {
+    await socket.emit('join', { username, room }, (error) => {
+        if (error) {
+            alert(error)
+            location.href = '/'
+        }
+    })
 
-socket.emit('join', { username, room }, (error) => {
-    if (error) {
-        alert(error)
-        location.href = '/'
-    }
-})
+    console.log(45);
 
-socket.on('message', (messages) => {
-    console.log(messages);
-    messages.forEach((message) => {
+        fetch(`http://localhost:3000/rooms/${room}`, {
+            method: 'GET',
+            mode: 'cors'
+        }).then(res => res.json()).then((data) => {
+            console.log(12);
+            const messages = data.data.messages
+            messages.forEach((message) => {
+                const html = Mustache.render(messageTemplate, {
+                    username: message.username,
+                    message: message.text,
+                    createdAt: moment(message.createdAt).format('h:mm a')
+                })
+                $messages.insertAdjacentHTML('beforeend', html)
+            })
+            $messages.scrollTo(0, $messages.scrollHeight)
+        })
+    
+
+    
+    socket.on('message', (message) => {
+        console.log(message);
         const html = Mustache.render(messageTemplate, {
             username: message.username,
             message: message.text,
+            createdAt: moment(message.createdAt).format('MMMM Do, h:mm a')
+        })
+        $messages.insertAdjacentHTML('beforeend', html)
+        $messages.scrollTo(0, $messages.scrollHeight)
+    })
+    
+    socket.on('locationMessage', (message) => {
+        const html = Mustache.render(locationMessageTemplate, {
+            username: message.username,
+            url: message.url,
             createdAt: moment(message.createdAt).format('h:mm a')
         })
         $messages.insertAdjacentHTML('beforeend', html)
-        autoscroll()
+        $messages.scrollTo(0, $messages.scrollHeight)
     })
-
-})
-
-socket.on('locationMessage', (message) => {
-    console.log(message)
-    const html = Mustache.render(locationMessageTemplate, {
-        username: message.username,
-        url: message.url,
-        createdAt: moment(message.createdAt).format('h:mm a')
+    
+    socket.on('roomData', ({ room, users, userId }) => {
+        const html = Mustache.render(sidebarTemplate, {
+            room,
+            users: users
+        })
+        document.cookie = `userId=${userId}`
+        document.querySelector('#sidebar').innerHTML = html
     })
-    $messages.insertAdjacentHTML('beforeend', html)
-    autoscroll()
-})
+}
 
-socket.on('roomData', ({ room, users, userId }) => {
-    const html = Mustache.render(sidebarTemplate, {
-        room,
-        users: users
-    })
-    document.cookie = `userId=${userId}`
-    document.querySelector('#sidebar').innerHTML = html
-})
+connectToSocket()
 
 $messageForm.addEventListener('submit', (e) => {
     e.preventDefault()
@@ -96,16 +99,15 @@ $messageForm.addEventListener('submit', (e) => {
     })
 })
 
-var skip = 0 
-$messages.addEventListener("wheel", function(event){
-    console.log(event)
-    if(event.deltaY < 0) {
-        skip += 1
-        socket.emit('oldmessage', {room, skip}, (err) => {
-            console.log(err);
-        })
-    }
-});
+// var skip = 0 
+// $messages.addEventListener("wheel", function(event){
+//     if(event.deltaY < 0) {
+//         skip += 1
+//         socket.emit('oldMessage', {room, skip}, (err) => {
+//             console.log(err);
+//         })
+//     }
+// });
 
 
 $sendLocationButton.addEventListener('click', () => {

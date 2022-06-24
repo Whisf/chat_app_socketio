@@ -6,15 +6,16 @@ const Filter = require('bad-words')
 const mongoose = require("mongoose");
 const router = require('./routes/index')
 const app = express()
-const morgan = require('morgan')
-const server = http.createServer(app)
-const io = socketio(server)
+// const morgan = require('morgan')
 const cors = require('cors')
 const { generateMessage, addMessage, getMessages } = require('./services/messages')
-const { removeUser, getUserById } = require('./services/users')
+const { removeUser, getUserById } = require('./services/users.service')
 const { getRoomByName, addUser, getUsersInRoom } = require('./services/room.service')
+const server = http.createServer(app)
+const io = socketio(server)
+require('dotenv').config()
 
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 3001
 const publicDirectoryPath = path.join(__dirname, '../public')
 
 app.use(express.static(publicDirectoryPath))
@@ -29,19 +30,17 @@ app.use(cors());
 app.options('*', cors());
 
 app.use('/', router)
-app.use(morgan('combined', {
-    skip: function(req, res) { return res.statusCode < 400 }
-}))
+// app.use(morgan('combined', {
+//     skip: function(req, res) { return res.statusCode < 400 }
+// }))
 
 io.on('connection', (socket) => {
     console.log('New WebSocket connection')
 
     socket.on('join', async(options, callback) => {
         const {user, room, userId} = await addUser(options.username, options.room)
-
         socket.join(room)
 
-        socket.emit('message', await getMessages(room, 1))
         socket.broadcast.to(room).emit('message', generateMessage('Admin', `${user} has joined!`))
 
         const listUsers = await getUsersInRoom(room);
@@ -68,12 +67,6 @@ io.on('connection', (socket) => {
         callback()
     })
 
-    socket.on('oldmessage', async(options, callback) => {
-        const {room, skip} = options
-        socket.broadcast.to(room).emit(socket.id, await getMessages(room, skip))
-        callback()
-    })
-
     socket.on('disconnect', () => {
         const user = removeUser(socket.id)
 
@@ -90,9 +83,9 @@ io.on('connection', (socket) => {
 dbConnect()
 
 function dbConnect() {
-    mongoose.connect('mongodb://localhost:27017/local', {
+    mongoose.connect(`mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`, {
         useNewUrlParser: true,
-        useUnifiedTopology: true
+        useUnifiedTopology: true,
     });
 
     mongoose.connection
