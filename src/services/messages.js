@@ -33,6 +33,9 @@ const getMessages = async (room, skip = 1) => {
         })
         .populate('sendedBy', 'name')
         .exec();
+    
+    if(!listMessages) return [];
+    console.log("🚀 ~ file: messages.js ~ line 38 ~ getMessages ~ listMessages", listMessages)
     return listMessages.reverse().map((message) => {
         const {text, sendedBy, createdAt } = message
         const userName = sendedBy.name

@@ -5,8 +5,17 @@ const User = require('../models/user.model')
  * @param {String} username 
  * @returns {User}
  */
-const createUser = async (username) => {
-    const user = await User.create({name: username})
+const createUser = async (username, password) => {
+    const isExistUser = await getUserByName(username)
+    if (isExistUser) {
+        throw new Error('UserName is existed!')
+    }
+    let user;
+    try {
+        user = await User.create({name: username, message: null, password: password})
+    } catch (error) {
+        return error
+    }
     return user
 }
 
@@ -26,8 +35,13 @@ const getUserById = async (userId) => {
  * @returns {User}
  */
 const getUserByName = async(userName) => {
-    const user = await User.findOne({name: userName});
-    return user
+    try {
+        const user = await User.findOne({name: userName});
+        return user
+    } catch (error) {
+        throw new Error(error)
+    }
+
 }
 
 const removeUser = (id) => {

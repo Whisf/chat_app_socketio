@@ -23,13 +23,10 @@ const connectToSocket = async () => {
         }
     })
 
-    console.log(45);
-
         fetch(`http://localhost:3000/rooms/${room}`, {
             method: 'GET',
             mode: 'cors'
         }).then(res => res.json()).then((data) => {
-            console.log(12);
             const messages = data.data.messages
             messages.forEach((message) => {
                 const html = Mustache.render(messageTemplate, {
@@ -45,7 +42,6 @@ const connectToSocket = async () => {
 
     
     socket.on('message', (message) => {
-        console.log(message);
         const html = Mustache.render(messageTemplate, {
             username: message.username,
             message: message.text,
