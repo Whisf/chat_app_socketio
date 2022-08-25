@@ -45,6 +45,7 @@ const getRoomByName = async(name) => {
  * @returns {Object}
  */
 const addUser = async(userName, roomName) => {
+    console.log("🚀 ~ file: room.service.js ~ line 48 ~ addUser ~ userName", userName)
     if(!userName || !roomName) {
         throw new Error('Invalid!')
     }
